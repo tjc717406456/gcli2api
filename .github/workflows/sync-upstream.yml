@@ -1,0 +1,39 @@
+name: Sync with Upstream
+
+  on:
+    schedule:
+      # 每 6 小时自动检查一次上游更新
+      - cron: '0 */6 * * *'
+    workflow_dispatch:  # 允许手动触发
+
+  jobs:
+    sync:
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v3
+          with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+            fetch-depth: 0
+
+        - name: Configure Git
+          run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        - name: Add upstream remote
+          run: |
+            git remote add upstream https://github.com/su-kaka/gcli2api.git || true
+            git fetch upstream
+
+        - name: Merge upstream changes
+          run: |
+            git checkout master
+            git merge upstream/master --no-edit --allow-unrelated-histories
+
+        - name: Push changes to fork
+          run: |
+            git push origin master
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
